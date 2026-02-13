@@ -3,187 +3,113 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>My Special Valentine</title>
+    <title>Valentine Smile Detector</title>
+    
     <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.6.0/dist/confetti.browser.min.js"></script>
-    <script src="https://cdn.jsdelivr.net/npm/@mediapipe/hands@0.4.1675984241/hands.min.js"></script>
-    <script src="https://cdn.jsdelivr.net/npm/@tensorflow/tfjs@3.13.0/dist/tf.min.js"></script>
-    <script src="https://cdn.jsdelivr.net/npm/@tensorflow-models/hand-pose-detection@0.0.6/dist/hand-pose-detection.min.js"></script>
+    <script defer src="https://cdn.jsdelivr.net/npm/face-api.js@0.22.2/dist/face-api.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/p5.js/1.4.0/p5.min.js"></script>
     <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;600&display=swap" rel="stylesheet">
-    <style>
-        :root {
-            --primary: #ff4081;
-            --bg: #fce4ec;
-            --text: #ad1457;
-            --white: #ffffff;
-        }
 
+    <style>
+        :root { --primary: #ff4081; --bg: #fce4ec; --text: #ad1457; }
         * { margin: 0; padding: 0; box-sizing: border-box; font-family: 'Poppins', sans-serif; }
-        
         body { background-color: var(--bg); height: 100vh; overflow: hidden; color: var(--text); }
 
         /* --- LOCKSCREEN --- */
-        #lock-screen {
-            display: flex; flex-direction: column; justify-content: center; align-items: center;
-            height: 100vh; text-align: center;
-        }
+        #lock-screen { display: flex; flex-direction: column; justify-content: center; align-items: center; height: 100vh; text-align: center; }
         .dots-container { display: flex; gap: 15px; margin: 20px 0 40px; }
         .dot { width: 15px; height: 15px; border: 2px solid var(--primary); border-radius: 50%; transition: 0.3s; }
         .dot.active { background: var(--primary); transform: scale(1.2); }
         .keypad { display: grid; grid-template-columns: repeat(3, 75px); gap: 15px; }
-        .key { 
-            width: 75px; height: 75px; border-radius: 50%; background: white; 
-            display: flex; justify-content: center; align-items: center; cursor: pointer;
-            box-shadow: 0 4px 10px rgba(0,0,0,0.05); font-size: 1.2rem; transition: 0.2s;
-        }
+        .key { width: 75px; height: 75px; border-radius: 50%; background: white; display: flex; justify-content: center; align-items: center; cursor: pointer; box-shadow: 0 4px 10px rgba(0,0,0,0.05); transition: 0.2s; }
         .key:active { background: var(--primary); color: white; transform: scale(0.9); }
 
-        /* --- MAIN DASHBOARD --- */
+        /* --- MAIN APP --- */
         #main-app { display: none; height: 100vh; flex-direction: column; background: #fff5f8; }
-
-        .top-bar {
-            padding: 20px; text-align: center; font-weight: 600; font-size: 1.1rem;
-            background: white; border-bottom: 1px solid rgba(255, 64, 129, 0.1);
-        }
-
+        .top-bar { padding: 20px; text-align: center; font-weight: 600; background: white; border-bottom: 1px solid rgba(255, 64, 129, 0.1); }
         .content { flex: 1; padding: 25px; overflow-y: auto; padding-bottom: 90px; }
-        
-        #typing-text { line-height: 1.8; font-size: 1rem; color: #444; }
-        .cursor { display: inline-block; width: 3px; background: var(--primary); animation: blink 0.7s infinite; }
+        .hidden { display: none !important; }
 
-        /* --- PLAYLIST STYLING --- */
-        .spotify-card {
-            border-radius: 15px; overflow: hidden; margin-bottom: 15px;
-            box-shadow: 0 5px 15px rgba(0,0,0,0.08);
-        }
-
-        /* --- GAME STYLING --- */
-        #game-area { 
-            position: relative; width: 100%; height: 300px; background: #ffebee; 
-            border-radius: 15px; overflow: hidden; margin-top: 20px;
-            display: flex; justify-content: center; align-items: center;
-            flex-direction: column;
-        }
-        #game-canvas { display: block; border-radius: 15px; position: absolute; top: 0; left: 0; }
-        #webcam-feed { transform: scaleX(-1); width: 100%; height: 100%; object-fit: cover; border-radius: 15px; display: none;} /* Awalnya hidden */
-        .game-info { z-index: 1; color: #ad1457; text-align: center; padding: 10px; }
-        .game-warning { color: #d32f2f; margin-top: 15px; font-size: 0.9rem; }
-
+        /* --- GAME AREA --- */
+        #game-container { position: relative; width: 100%; height: 350px; background: #000; border-radius: 20px; overflow: hidden; margin-top: 10px; }
+        #video-feed { position: absolute; width: 100%; height: 100%; object-fit: cover; transform: scaleX(-1); opacity: 0.4; }
+        #p5-canvas-holder { position: absolute; top: 0; left: 0; z-index: 5; width: 100%; height: 100%; }
+        .status-msg { margin-top: 15px; font-weight: bold; font-size: 0.9rem; text-align: center; }
 
         /* --- BOTTOM NAV --- */
-        .bottom-nav {
-            position: fixed; bottom: 0; width: 100%; height: 75px;
-            background: white; display: flex; justify-content: space-around;
-            align-items: center; box-shadow: 0 -5px 20px rgba(0,0,0,0.05);
-        }
-        .nav-item { 
-            display: flex; flex-direction: column; align-items: center; 
-            font-size: 0.75rem; color: #bbb; cursor: pointer; transition: 0.3s;
-        }
+        .bottom-nav { position: fixed; bottom: 0; width: 100%; height: 75px; background: white; display: flex; justify-content: space-around; align-items: center; box-shadow: 0 -5px 20px rgba(0,0,0,0.05); }
+        .nav-item { display: flex; flex-direction: column; align-items: center; font-size: 0.75rem; color: #bbb; cursor: pointer; transition: 0.3s; }
         .nav-item.active { color: var(--primary); font-weight: 600; }
-        .nav-icon { font-size: 1.5rem; margin-bottom: 4px; }
-
-        /* Animations */
-        @keyframes blink { 50% { opacity: 0; } }
-        @keyframes shake { 0%, 100% { transform: translateX(0); } 25% { transform: translateX(-10px); } 75% { transform: translateX(10px); } }
-        .hidden { display: none !important; }
     </style>
 </head>
 <body>
 
     <div id="lock-screen">
-        <h2 style="font-weight: 400; margin-bottom: 5px;">Input PIN</h2>
-        <p style="font-size: 0.8rem; opacity: 0.6;">Hint: Tanggal Jadian Kita</p>
+        <h2 style="font-weight: 400;">Passcode</h2>
         <div class="dots-container" id="dots">
             <div class="dot"></div><div class="dot"></div><div class="dot"></div><div class="dot"></div>
         </div>
         <div class="keypad">
-            <div class="key" onclick="pressKey('1')">1</div>
-            <div class="key" onclick="pressKey('2')">2</div>
-            <div class="key" onclick="pressKey('3')">3</div>
-            <div class="key" onclick="pressKey('4')">4</div>
-            <div class="key" onclick="pressKey('5')">5</div>
-            <div class="key" onclick="pressKey('6')">6</div>
-            <div class="key" onclick="pressKey('7')">7</div>
-            <div class="key" onclick="pressKey('8')">8</div>
-            <div class="key" onclick="pressKey('9')">9</div>
-            <div class="key" onclick="clearPin()">C</div>
-            <div class="key" onclick="pressKey('0')">0</div>
-            <div class="key" style="background:none; box-shadow:none; cursor:default;"></div>
+            <script>for(let i=1; i<=9; i++) document.write(`<div class="key" onclick="pressKey('${i}')">${i}</div>`);</script>
+            <div class="key" onclick="clearPin()">C</div><div class="key" onclick="pressKey('0')">0</div>
         </div>
     </div>
 
     <div id="main-app">
         <div class="top-bar" id="page-title">💌 Valentine's Message</div>
-
         <div class="content">
             <div id="menu-pesan">
-                <div id="typing-text"></div><span class="cursor" id="cursor">|</span>
+                <p id="typing-text" style="line-height: 1.8; color: #444;"></p>
             </div>
 
             <div id="menu-playlist" class="hidden">
-                <p style="margin-bottom: 20px; text-align: center; font-style: italic;">"Lagu yang selalu bikin aku inget kamu..."</p>
-                
-                <div class="spotify-card">
-                    <iframe src="http://googleusercontent.com/spotify.com/7" width="100%" height="152" frameBorder="0" allow="autoplay; clipboard-write; encrypted-media; fullscreen; picture-in-picture" loading="lazy"></iframe>
-                </div>
-                
-                <div class="spotify-card">
-                    <iframe src="http://googleusercontent.com/spotify.com/8" width="100%" height="152" frameBorder="0" allow="autoplay; clipboard-write; encrypted-media; fullscreen; picture-in-picture" loading="lazy"></iframe>
-                </div>
+                <iframe style="border-radius:12px" src="https://open.spotify.com/embed/track/6UelLqGlm07H36df6vS66m" width="100%" height="152" frameBorder="0" allow="autoplay; clipboard-write; encrypted-media; fullscreen; picture-in-picture" loading="lazy"></iframe>
+                <iframe style="border-radius:12px; margin-top:10px" src="https://open.spotify.com/embed/track/3tj9f9OonK7mYmUaB59kG2" width="100%" height="152" frameBorder="0" allow="autoplay; clipboard-write; encrypted-media; fullscreen; picture-in-picture" loading="lazy"></iframe>
             </div>
 
-            <div id="menu-game" class="hidden" style="text-align: center; padding-top: 20px;">
-                <h3 style="margin-bottom: 10px;">Heart Catcher! ❤️</h3>
-                <p style="font-size: 0.9rem; opacity: 0.7;">Kepalkan tanganmu di depan kamera untuk membentuk hati!</p>
-                
-                <div id="game-area">
-                    <video id="webcam-feed" autoplay playsinline></video>
-                    <div id="game-canvas-container"></div>
-                    <div class="game-info" id="game-status">Loading camera...</div>
+            <div id="menu-game" class="hidden">
+                <h3 style="text-align: center;">Smile Detector ❤️</h3>
+                <div id="game-container">
+                    <video id="video-feed" autoplay muted playsinline></video>
+                    <div id="p5-canvas-holder"></div>
                 </div>
-                <p class="game-warning">Pastikan kamu mengizinkan akses kamera ya!</p>
+                <div class="status-msg" id="status-text">Memuat AI... Mohon tunggu...</div>
             </div>
         </div>
 
         <nav class="bottom-nav">
-            <div class="nav-item active" onclick="switchMenu('pesan', this)">
-                <span class="nav-icon">💌</span><span>Pesan</span>
-            </div>
-            <div class="nav-item" onclick="switchMenu('playlist', this)">
-                <span class="nav-icon">🎵</span><span>Playlist</span>
-            </div>
-            <div class="nav-item" onclick="switchMenu('game', this)">
-                <span class="nav-icon">🎮</span><span>Game</span>
-            </div>
+            <div class="nav-item active" onclick="switchMenu('pesan', this)"><span style="font-size:1.5rem">💌</span><span>Pesan</span></div>
+            <div class="nav-item" onclick="switchMenu('playlist', this)"><span style="font-size:1.5rem">🎵</span><span>Playlist</span></div>
+            <div class="nav-item" onclick="switchMenu('game', this)"><span style="font-size:1.5rem">🎮</span><span>Game</span></div>
         </nav>
     </div>
 
     <script>
-        const CORRECT_PIN = "2009"; // GANTI PIN DI SINI
+        const CORRECT_PIN = "2009";
         let currentInput = "";
-        const fullMessage = "Halo sayang... ✨\n\nSelamat hari Valentine! Gak kerasa ya kita udah sejauh ini. Aku cuma mau bilang makasih udah sabar sama aku dan selalu ada buat aku.\n\nWebsite kecil ini buat kamu, isinya pesan-pesan singkat dan lagu yang suka aku dengerin pas lagi kangen kamu.\n\nI love you more than words can say! ❤️";
+        let isHappy = false;
+        let particles = [];
+        let faceModelsLoaded = false;
 
+        // --- PIN LOGIC ---
         function pressKey(num) {
             if (currentInput.length < 4) {
                 currentInput += num;
                 updateDots();
-                if (currentInput.length === 4) {
-                    setTimeout(checkPin, 300);
-                }
+                if (currentInput.length === 4) setTimeout(checkPin, 300);
             }
         }
-
         function updateDots() {
             const dots = document.querySelectorAll('.dot');
             dots.forEach((dot, i) => dot.classList.toggle('active', i < currentInput.length));
         }
-
         function clearPin() { currentInput = ""; updateDots(); }
-
         function checkPin() {
             if (currentInput === CORRECT_PIN) {
-                unlock();
+                document.getElementById('lock-screen').style.display = 'none';
+                document.getElementById('main-app').style.display = 'flex';
+                confetti({ particleCount: 150, spread: 70, origin: { y: 0.6 } });
+                startTyping();
             } else {
                 const ls = document.getElementById('lock-screen');
                 ls.style.animation = "shake 0.3s";
@@ -191,207 +117,118 @@
             }
         }
 
-        function unlock() {
-            document.getElementById('lock-screen').style.display = 'none';
-            document.getElementById('main-app').style.display = 'flex';
-            confetti({ particleCount: 150, spread: 70, origin: { y: 0.6 }, colors: ['#ff4081', '#ffffff'] });
-            startTyping();
-        }
-
         function startTyping() {
+            const txt = "Halo sayang... ✨\n\nSelamat hari Valentine! Makasih udah jadi alasan aku tersenyum setiap hari. Coba buka menu Game deh, aku mau liat senyum kamu! ❤️";
             let i = 0;
-            const target = document.getElementById('typing-text');
-            target.innerHTML = "";
             function type() {
-                if (i < fullMessage.length) {
-                    target.innerHTML += fullMessage.charAt(i);
-                    i++;
-                    setTimeout(type, 50);
-                } else {
-                    document.getElementById('cursor').style.display = 'none';
+                if (i < txt.length) {
+                    document.getElementById('typing-text').innerHTML += txt.charAt(i);
+                    i++; setTimeout(type, 50);
                 }
             }
             type();
         }
-        
-        // --- GAME LOGIC ---
-        let detector, video, canvasP5;
-        let particles = [];
-        let numParticles = 50;
-        let isHandDetected = false;
-        let isFist = false;
 
-        class Particle {
-            constructor(x, y) {
-                this.pos = createVector(x, y);
-                this.vel = p5.Vector.random2D().mult(random(0.5, 2));
+        // --- FACE DETECTION LOGIC ---
+        async function initFaceAPI() {
+            if(faceModelsLoaded) return;
+            const MODEL_URL = 'https://cdn.jsdelivr.net/npm/@vladmandic/face-api@1/model'; // Link model CDN yang stabil
+            try {
+                await Promise.all([
+                    faceapi.nets.tinyFaceDetector.loadFromUri(MODEL_URL),
+                    faceapi.nets.faceExpressionNet.loadFromUri(MODEL_URL)
+                ]);
+                faceModelsLoaded = true;
+                startVideo();
+            } catch (e) {
+                document.getElementById('status-text').innerText = "Gagal memuat AI. Cek koneksi internet.";
+            }
+        }
+
+        function startVideo() {
+            const video = document.getElementById('video-feed');
+            navigator.mediaDevices.getUserMedia({ video: {} })
+                .then(stream => {
+                    video.srcObject = stream;
+                    document.getElementById('status-text').innerText = "AI Siap! Ayo Senyum 😊";
+                    detectSmile();
+                });
+        }
+
+        async function detectSmile() {
+            const video = document.getElementById('video-feed');
+            setInterval(async () => {
+                const detections = await faceapi.detectAllFaces(video, new faceapi.TinyFaceDetectorOptions()).withFaceExpressions();
+                if (detections.length > 0) {
+                    isHappy = detections[0].expressions.happy > 0.5;
+                    document.getElementById('status-text').innerText = isHappy ? "CANTIKNYA! ❤️" : "Mana senyum manisnya? 🤨";
+                }
+            }, 200);
+        }
+
+        // --- P5.JS ENGINE ---
+        function setup() {
+            let h = document.getElementById('p5-canvas-holder');
+            let cnv = createCanvas(h.offsetWidth, h.offsetHeight);
+            cnv.parent('p5-canvas-holder');
+            for (let i = 0; i < 100; i++) particles.push(new HeartParticle(i));
+        }
+
+        function draw() {
+            clear();
+            particles.forEach(p => {
+                p.update();
+                p.show();
+            });
+        }
+
+        class HeartParticle {
+            constructor(i) {
+                this.pos = createVector(random(width), random(height));
+                this.vel = p5.Vector.random2D();
                 this.acc = createVector();
-                this.life = 255;
-                this.size = random(5, 15);
-                this.color = color(255, random(100, 200), random(150, 250), this.life);
-                this.shape = random() > 0.5 ? 'heart' : 'circle';
+                this.t = random(TWO_PI); // Parameter untuk rumus hati
+                this.id = i;
             }
 
             update() {
+                if (isHappy) {
+                    // RUMUS MATEMATIKA HATI
+                    let x = 16 * pow(sin(this.t), 3);
+                    let y = -(13 * cos(this.t) - 5 * cos(2 * this.t) - 2 * cos(3 * this.t) - cos(4 * this.t));
+                    let target = createVector(width/2 + x * 8, height/2 + y * 8);
+                    
+                    let force = p5.Vector.sub(target, this.pos);
+                    force.mult(0.05);
+                    this.acc.add(force);
+                } else {
+                    // Jika tidak senyum, partikel pecah/berantakan
+                    this.acc.add(p5.Vector.random2D().mult(0.5));
+                }
+                
                 this.vel.add(this.acc);
+                this.vel.limit(isHappy ? 8 : 2);
                 this.pos.add(this.vel);
                 this.acc.mult(0);
-                this.life -= 2;
-                this.size -= 0.05;
-                if (this.size < 0) this.size = 0;
             }
 
-            draw() {
-                if (this.life <= 0) return;
-                fill(red(this.color), green(this.color), blue(this.color), this.life);
+            show() {
+                fill(255, 64, 129, 200);
                 noStroke();
-                if (this.shape === 'heart') {
-                    drawHeart(this.pos.x, this.pos.y, this.size);
-                } else {
-                    ellipse(this.pos.x, this.pos.y, this.size);
-                }
-            }
-
-            isDead() {
-                return this.life < 0;
+                ellipse(this.pos.x, this.pos.y, 7);
             }
         }
 
-        function drawHeart(x, y, size) {
-            beginShape();
-            vertex(x, y);
-            bezierVertex(x - size / 2, y - size / 2, x - size, y + size / 3, x, y + size);
-            bezierVertex(x + size, y + size / 3, x + size / 2, y - size / 2, x, y);
-            endShape(CLOSE);
-        }
-
-
-        async function initGameCamera() {
-            const videoElement = document.getElementById('webcam-feed');
-            try {
-                const stream = await navigator.mediaDevices.getUserMedia({ video: true });
-                videoElement.srcObject = stream;
-                videoElement.style.display = 'block'; // Show webcam feed
-                videoElement.onloadeddata = async () => {
-                    video = videoElement;
-                    const model = handPoseDetection.SupportedModels.MediaPipeHands;
-                    detector = await handPoseDetection.createDetector(model, {
-                        runtime: 'mediapipe',
-                        solutionPath: 'https://cdn.jsdelivr.net/npm/@mediapipe/hands@0.4.1675984241'
-                    });
-                    document.getElementById('game-status').innerText = 'Camera Ready! Kepalkan tanganmu!';
-                    detectHands();
-                };
-            } catch (err) {
-                console.error("Error accessing camera: ", err);
-                document.getElementById('game-status').innerText = 'Gagal akses kamera. Mohon izinkan akses.';
-            }
-        }
-
-        async function detectHands() {
-            if (!detector || !video || video.readyState !== 4) {
-                requestAnimationFrame(detectHands);
-                return;
-            }
-
-            const hands = await detector.estimateHands(video, { flipHorizontal: true });
-            isHandDetected = hands.length > 0;
-            isFist = false;
-
-            if (isHandDetected) {
-                const hand = hands[0];
-                const landmarks = hand.keypoints;
-
-                // Simple check for a fist: thumb tip close to other fingers' base
-                // Adjust thresholds based on testing
-                const thumbTip = landmarks[4];
-                const indexBase = landmarks[5];
-                const pinkyBase = landmarks[17];
-
-                if (dist(thumbTip.x, thumbTip.y, indexBase.x, indexBase.y) < 50 &&
-                    dist(thumbTip.x, thumbTip.y, pinkyBase.x, pinkyBase.y) < 80) {
-                    isFist = true;
-                }
-            }
-            requestAnimationFrame(detectHands);
-        }
-
-        // p5.js Sketch
-        let sketch = function(p) {
-            p.setup = function() {
-                let container = document.getElementById('game-canvas-container');
-                canvasP5 = p.createCanvas(container.offsetWidth, container.offsetHeight);
-                canvasP5.parent('game-canvas-container');
-                p.noStroke();
-            };
-
-            p.draw = function() {
-                p.clear(); // Clear canvas every frame
-
-                if (isHandDetected && isFist) {
-                    // Spawn new particles if hand is a fist
-                    for (let i = 0; i < 2; i++) { // Spawn a few particles per frame
-                        let x = p.random(p.width / 2 - 50, p.width / 2 + 50);
-                        let y = p.random(p.height / 2 - 50, p.height / 2 + 50);
-                        particles.push(new Particle(x, y));
-                    }
-                    document.getElementById('game-status').innerText = 'Perfect! ❤️';
-
-                } else if (isHandDetected && !isFist) {
-                    // Hand open, particles float away or disperse
-                    document.getElementById('game-status').innerText = 'Kepalkan tanganmu!';
-                    particles.forEach(pt => {
-                        pt.vel.x += p.random(-0.5, 0.5);
-                        pt.vel.y += p.random(-0.5, 0.5);
-                        pt.life -= 5; // Fade faster
-                    });
-                } else {
-                    // No hand detected, particles disperse and die
-                    document.getElementById('game-status').innerText = 'Arahkan tanganmu ke kamera!';
-                    particles.forEach(pt => pt.life -= 10); // Die quickly
-                }
-
-                // Update and draw particles
-                for (let i = particles.length - 1; i >= 0; i--) {
-                    particles[i].update();
-                    particles[i].draw();
-                    if (particles[i].isDead()) {
-                        particles.splice(i, 1);
-                    }
-                }
-            };
-            
-            p.windowResized = function() {
-                let container = document.getElementById('game-canvas-container');
-                p.resizeCanvas(container.offsetWidth, container.offsetHeight);
-            };
-        };
-
-        let myp5 = new p5(sketch); // Initialize p5 sketch
-
-        // --- NAVIGATION LOGIC ---
+        // --- UI NAVIGATION ---
         function switchMenu(menu, el) {
-            // Stop game logic if switching away from game
-            if (menu !== 'game' && video && video.srcObject) {
-                video.srcObject.getTracks().forEach(track => track.stop());
-                video.style.display = 'none';
-                particles = []; // Clear particles
-            } else if (menu === 'game' && !detector) {
-                initGameCamera(); // Start camera if switching to game and not initialized
-            }
-
-
             document.querySelectorAll('.nav-item').forEach(item => item.classList.remove('active'));
             el.classList.add('active');
-
             document.getElementById('menu-pesan').classList.add('hidden');
             document.getElementById('menu-playlist').classList.add('hidden');
             document.getElementById('menu-game').classList.add('hidden');
-
             document.getElementById('menu-' + menu).classList.remove('hidden');
-            
-            const titles = {pesan: "💌 Valentine's Message", playlist: "🎵 Our Playlist", game: "🎮 Heart Catcher!"};
-            document.getElementById('page-title').innerText = titles[menu];
+
+            if (menu === 'game') initFaceAPI();
         }
     </script>
 </body>
