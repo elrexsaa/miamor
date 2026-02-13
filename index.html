@@ -3,195 +3,195 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Unlock My Heart</title>
+    <title>My Special App</title>
     <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.6.0/dist/confetti.browser.min.js"></script>
     <style>
+        :root {
+            --primary: #ff4081;
+            --bg: #fce4ec;
+            --text: #ad1457;
+        }
+
         * { margin: 0; padding: 0; box-sizing: border-box; font-family: 'Poppins', sans-serif; }
         
-        body {
-            background-color: #fce4ec;
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            height: 100vh;
-            overflow: hidden;
-            transition: background 1s;
-        }
+        body { background-color: var(--bg); height: 100vh; overflow: hidden; color: var(--text); }
 
-        /* Screen Lock Styling */
+        /* --- 1. LOCKSCREEN --- */
         #lock-screen {
-            text-align: center;
-            animation: fadeIn 1s ease;
+            display: flex; flex-direction: column; justify-content: center; align-items: center;
+            height: 100vh; text-align: center;
+        }
+        .dots-container { display: flex; gap: 15px; margin: 20px 0 40px; }
+        .dot { width: 15px; height: 15px; border: 2px solid var(--primary); border-radius: 50%; }
+        .dot.active { background: var(--primary); }
+        .keypad { display: grid; grid-template-columns: repeat(3, 70px); gap: 15px; }
+        .key { 
+            width: 70px; height: 70px; border-radius: 50%; background: white; 
+            display: flex; justify-content: center; align-items: center; cursor: pointer;
+            box-shadow: 0 4px 10px rgba(0,0,0,0.05);
         }
 
-        .title { color: #ad1457; margin-bottom: 20px; font-weight: 600; letter-spacing: 1px; }
+        /* --- 2. MAIN DASHBOARD --- */
+        #main-app { display: none; height: 100vh; flex-direction: column; }
 
-        /* Dot Indicators */
-        .dots-container {
-            display: flex;
-            justify-content: center;
-            gap: 15px;
-            margin-bottom: 30px;
+        /* Top Bar */
+        .top-bar {
+            padding: 20px; text-align: center; font-weight: bold; font-size: 1.2rem;
+            border-bottom: 1px solid rgba(255, 64, 129, 0.1); background: white;
         }
 
-        .dot {
-            width: 15px;
-            height: 15px;
-            border: 2px solid #ff4081;
-            border-radius: 50%;
-            transition: background 0.2s;
+        /* Content Area */
+        .content { flex: 1; padding: 25px; overflow-y: auto; padding-bottom: 80px; }
+        
+        /* Typing Effect */
+        #typing-text { line-height: 1.6; font-size: 1.1rem; white-space: pre-wrap; }
+        .cursor { display: inline-block; width: 3px; background: var(--primary); animation: blink 0.7s infinite; }
+
+        /* --- 3. BOTTOM NAV --- */
+        .bottom-nav {
+            position: fixed; bottom: 0; width: 100%; height: 70px;
+            background: white; display: flex; justify-content: space-around;
+            align-items: center; box-shadow: 0 -5px 15px rgba(0,0,0,0.05);
         }
-
-        .dot.active { background-color: #ff4081; }
-
-        /* Keypad */
-        .keypad {
-            display: grid;
-            grid-template-columns: repeat(3, 70px);
-            gap: 15px;
-            justify-content: center;
+        .nav-item { 
+            display: flex; flex-direction: column; align-items: center; 
+            font-size: 0.7rem; color: #888; cursor: pointer; transition: 0.3s;
         }
+        .nav-item.active { color: var(--primary); }
+        .nav-icon { font-size: 1.4rem; margin-bottom: 2px; }
 
-        .key {
-            width: 70px;
-            height: 70px;
-            border-radius: 50%;
-            background: rgba(255, 255, 255, 0.5);
-            border: 1px solid rgba(255, 64, 129, 0.2);
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            font-size: 1.5rem;
-            color: #ad1457;
-            cursor: pointer;
-            transition: all 0.2s;
-            user-select: none;
-        }
-
-        .key:active { transform: scale(0.9); background: #ff4081; color: white; }
-
-        /* Surprise Section */
-        #surprise { display: none; text-align: center; }
-        #surprise h1 { color: #ad1457; font-size: 2.5rem; animation: popUp 0.8s cubic-bezier(0.175, 0.885, 0.32, 1.275); }
-
-        @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
-        @keyframes popUp { from { transform: scale(0); } to { transform: scale(1); } }
-        @keyframes shake {
-            0%, 100% { transform: translateX(0); }
-            25% { transform: translateX(-10px); }
-            75% { transform: translateX(10px); }
-        }
+        /* Utilities */
+        @keyframes blink { 50% { opacity: 0; } }
+        @keyframes shake { 0%, 100% { transform: translateX(0); } 25% { transform: translateX(-10px); } 75% { transform: translateX(10px); } }
+        .hidden { display: none !important; }
     </style>
 </head>
 <body>
 
     <div id="lock-screen">
-        <h2 class="title">Enter Secret Code</h2>
-        <div class="dots-container">
-            <div class="dot"></div>
-            <div class="dot"></div>
-            <div class="dot"></div>
-            <div class="dot"></div>
+        <h2 style="font-weight: 400;">Passcode</h2>
+        <div class="dots-container" id="dots">
+            <div class="dot"></div><div class="dot"></div><div class="dot"></div><div class="dot"></div>
         </div>
         <div class="keypad">
-            <div class="key" onclick="pressKey('1')">1</div>
-            <div class="key" onclick="pressKey('2')">2</div>
-            <div class="key" onclick="pressKey('3')">3</div>
-            <div class="key" onclick="pressKey('4')">4</div>
-            <div class="key" onclick="pressKey('5')">5</div>
-            <div class="key" onclick="pressKey('6')">6</div>
-            <div class="key" onclick="pressKey('7')">7</div>
-            <div class="key" onclick="pressKey('8')">8</div>
-            <div class="key" onclick="pressKey('9')">9</div>
-            <div></div>
-            <div class="key" onclick="pressKey('0')">0</div>
-            <div class="key" onclick="clearPin()" style="font-size: 1rem;">C</div>
+            <script>
+                for(let i=1; i<=9; i++) document.write(`<div class="key" onclick="pressKey('${i}')">${i}</div>`);
+            </script>
+            <div></div><div class="key" onclick="pressKey('0')">0</div><div class="key" onclick="clearPin()">C</div>
         </div>
     </div>
 
-    <div id="surprise">
-        <h1>You Unlocked My Heart! ❤️</h1>
-        <p style="color: #ad1457; margin-top: 10px;">I Love You So Much</p>
+    <div id="main-app">
+        <div class="top-bar" id="page-title">Valentine's Message</div>
+
+        <div class="content">
+            <div id="menu-pesan">
+                <div id="typing-text"></div><span class="cursor" id="cursor">|</span>
+            </div>
+
+            <div id="menu-playlist" class="hidden">
+                <h3 style="margin-bottom: 15px;">Our Special Songs</h3>
+                <div style="background: white; padding: 15px; border-radius: 15px; margin-bottom: 10px;">
+                    🎵 Cantik - Kahitna
+                </div>
+                <div style="background: white; padding: 15px; border-radius: 15px;">
+                    🎵 Perfect - Ed Sheeran
+                </div>
+                <p style="margin-top: 20px; font-size: 0.8rem;">(Kamu bisa embed Spotify di sini)</p>
+            </div>
+
+            <div id="menu-game" class="hidden">
+                <h3>Mini Game</h3>
+                <p style="margin-top: 15px;">Coming Soon: Tebak Kenangan kita! 🎮</p>
+            </div>
+        </div>
+
+        <nav class="bottom-nav">
+            <div class="nav-item active" onclick="switchMenu('pesan', this)">
+                <span class="nav-icon">💌</span><span>Pesan</span>
+            </div>
+            <div class="nav-item" onclick="switchMenu('playlist', this)">
+                <span class="nav-icon">🎵</span><span>Playlist</span>
+            </div>
+            <div class="nav-item" onclick="switchMenu('game', this)">
+                <span class="nav-icon">🎮</span><span>Game</span>
+            </div>
+        </nav>
     </div>
 
     <script>
-        const CORRECT_PIN = "2009"; // GANTI PIN KAMU DI SINI
+        const CORRECT_PIN = "2009";
         let currentInput = "";
+        const fullMessage = "Halo sayang... \n\nSelamat hari Valentine! Aku cuma mau bilang kalau kehadiranmu itu bermakna banget buat aku. \n\nSemoga kita terus barengan ya. Makasih udah jadi bagian terbaik di hidupku. ❤️";
 
         function pressKey(num) {
             if (currentInput.length < 4) {
                 currentInput += num;
                 updateDots();
-                
-                if (currentInput.length === 4) {
-                    checkPin();
-                }
+                if (currentInput.length === 4) checkPin();
             }
         }
 
         function updateDots() {
             const dots = document.querySelectorAll('.dot');
-            dots.forEach((dot, index) => {
-                if (index < currentInput.length) {
-                    dot.classList.add('active');
-                } else {
-                    dot.classList.remove('active');
-                }
-            });
+            dots.forEach((dot, i) => dot.classList.toggle('active', i < currentInput.length));
         }
 
-        function clearPin() {
-            currentInput = "";
-            updateDots();
-        }
+        function clearPin() { currentInput = ""; updateDots(); }
 
         function checkPin() {
             if (currentInput === CORRECT_PIN) {
                 unlock();
             } else {
-                // Efek Getar kalau salah
-                const screen = document.getElementById('lock-screen');
-                screen.style.animation = "shake 0.3s ease";
-                setTimeout(() => {
-                    screen.style.animation = "fadeIn 1s ease";
-                    clearPin();
-                }, 300);
+                const ls = document.getElementById('lock-screen');
+                ls.style.animation = "shake 0.3s";
+                setTimeout(() => { ls.style.animation = ""; clearPin(); }, 300);
             }
         }
 
         function unlock() {
             document.getElementById('lock-screen').style.display = 'none';
-            document.getElementById('surprise').style.display = 'block';
-            document.body.style.backgroundColor = '#fff0f3';
+            document.getElementById('main-app').style.display = 'flex';
+            
+            // Trigger Confetti
+            confetti({ particleCount: 150, spread: 70, origin: { y: 0.6 } });
+            
+            // Start Typing Effect
+            startTyping();
+        }
 
-            // Efek Partikel Hujan
-            var end = Date.now() + (15 * 1000);
-            var colors = ['#ff4081', '#ff80ab', '#ffffff'];
+        function startTyping() {
+            let i = 0;
+            const target = document.getElementById('typing-text');
+            target.innerHTML = "";
+            function type() {
+                if (i < fullMessage.length) {
+                    target.innerHTML += fullMessage.charAt(i);
+                    i++;
+                    setTimeout(type, 50);
+                } else {
+                    document.getElementById('cursor').style.display = 'none';
+                }
+            }
+            type();
+        }
 
-            (function frame() {
-                confetti({
-                    particleCount: 3,
-                    angle: 60,
-                    spread: 55,
-                    origin: { x: 0 },
-                    colors: colors
-                });
-                confetti({
-                    particleCount: 3,
-                    angle: 120,
-                    spread: 55,
-                    origin: { x: 1 },
-                    colors: colors
-                });
-                if (Date.now() < end) requestAnimationFrame(frame);
-            }());
+        function switchMenu(menu, el) {
+            // Update UI Navigasi
+            document.querySelectorAll('.nav-item').forEach(item => item.classList.remove('active'));
+            el.classList.add('active');
 
-            confetti({
-                particleCount: 200,
-                spread: 100,
-                origin: { y: 0.6 },
-                colors: colors
-            });
+            // Switch Content
+            document.getElementById('menu-pesan').classList.add('hidden');
+            document.getElementById('menu-playlist').classList.add('hidden');
+            document.getElementById('menu-game').classList.add('hidden');
+
+            const target = 'menu-' + menu;
+            document.getElementById(target).classList.remove('hidden');
+            
+            // Update Title
+            const titles = {pesan: "Valentine's Message", playlist: "Our Playlist", game: "Fun Zone"};
+            document.getElementById('page-title').innerText = titles[menu];
         }
     </script>
 </body>
