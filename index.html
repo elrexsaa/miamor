@@ -1,0 +1,198 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Unlock My Heart</title>
+    <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.6.0/dist/confetti.browser.min.js"></script>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; font-family: 'Poppins', sans-serif; }
+        
+        body {
+            background-color: #fce4ec;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+            overflow: hidden;
+            transition: background 1s;
+        }
+
+        /* Screen Lock Styling */
+        #lock-screen {
+            text-align: center;
+            animation: fadeIn 1s ease;
+        }
+
+        .title { color: #ad1457; margin-bottom: 20px; font-weight: 600; letter-spacing: 1px; }
+
+        /* Dot Indicators */
+        .dots-container {
+            display: flex;
+            justify-content: center;
+            gap: 15px;
+            margin-bottom: 30px;
+        }
+
+        .dot {
+            width: 15px;
+            height: 15px;
+            border: 2px solid #ff4081;
+            border-radius: 50%;
+            transition: background 0.2s;
+        }
+
+        .dot.active { background-color: #ff4081; }
+
+        /* Keypad */
+        .keypad {
+            display: grid;
+            grid-template-columns: repeat(3, 70px);
+            gap: 15px;
+            justify-content: center;
+        }
+
+        .key {
+            width: 70px;
+            height: 70px;
+            border-radius: 50%;
+            background: rgba(255, 255, 255, 0.5);
+            border: 1px solid rgba(255, 64, 129, 0.2);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            font-size: 1.5rem;
+            color: #ad1457;
+            cursor: pointer;
+            transition: all 0.2s;
+            user-select: none;
+        }
+
+        .key:active { transform: scale(0.9); background: #ff4081; color: white; }
+
+        /* Surprise Section */
+        #surprise { display: none; text-align: center; }
+        #surprise h1 { color: #ad1457; font-size: 2.5rem; animation: popUp 0.8s cubic-bezier(0.175, 0.885, 0.32, 1.275); }
+
+        @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
+        @keyframes popUp { from { transform: scale(0); } to { transform: scale(1); } }
+        @keyframes shake {
+            0%, 100% { transform: translateX(0); }
+            25% { transform: translateX(-10px); }
+            75% { transform: translateX(10px); }
+        }
+    </style>
+</head>
+<body>
+
+    <div id="lock-screen">
+        <h2 class="title">Enter Secret Code</h2>
+        <div class="dots-container">
+            <div class="dot"></div>
+            <div class="dot"></div>
+            <div class="dot"></div>
+            <div class="dot"></div>
+        </div>
+        <div class="keypad">
+            <div class="key" onclick="pressKey('1')">1</div>
+            <div class="key" onclick="pressKey('2')">2</div>
+            <div class="key" onclick="pressKey('3')">3</div>
+            <div class="key" onclick="pressKey('4')">4</div>
+            <div class="key" onclick="pressKey('5')">5</div>
+            <div class="key" onclick="pressKey('6')">6</div>
+            <div class="key" onclick="pressKey('7')">7</div>
+            <div class="key" onclick="pressKey('8')">8</div>
+            <div class="key" onclick="pressKey('9')">9</div>
+            <div></div>
+            <div class="key" onclick="pressKey('0')">0</div>
+            <div class="key" onclick="clearPin()" style="font-size: 1rem;">C</div>
+        </div>
+    </div>
+
+    <div id="surprise">
+        <h1>You Unlocked My Heart! ❤️</h1>
+        <p style="color: #ad1457; margin-top: 10px;">I Love You So Much</p>
+    </div>
+
+    <script>
+        const CORRECT_PIN = "2009"; // GANTI PIN KAMU DI SINI
+        let currentInput = "";
+
+        function pressKey(num) {
+            if (currentInput.length < 4) {
+                currentInput += num;
+                updateDots();
+                
+                if (currentInput.length === 4) {
+                    checkPin();
+                }
+            }
+        }
+
+        function updateDots() {
+            const dots = document.querySelectorAll('.dot');
+            dots.forEach((dot, index) => {
+                if (index < currentInput.length) {
+                    dot.classList.add('active');
+                } else {
+                    dot.classList.remove('active');
+                }
+            });
+        }
+
+        function clearPin() {
+            currentInput = "";
+            updateDots();
+        }
+
+        function checkPin() {
+            if (currentInput === CORRECT_PIN) {
+                unlock();
+            } else {
+                // Efek Getar kalau salah
+                const screen = document.getElementById('lock-screen');
+                screen.style.animation = "shake 0.3s ease";
+                setTimeout(() => {
+                    screen.style.animation = "fadeIn 1s ease";
+                    clearPin();
+                }, 300);
+            }
+        }
+
+        function unlock() {
+            document.getElementById('lock-screen').style.display = 'none';
+            document.getElementById('surprise').style.display = 'block';
+            document.body.style.backgroundColor = '#fff0f3';
+
+            // Efek Partikel Hujan
+            var end = Date.now() + (15 * 1000);
+            var colors = ['#ff4081', '#ff80ab', '#ffffff'];
+
+            (function frame() {
+                confetti({
+                    particleCount: 3,
+                    angle: 60,
+                    spread: 55,
+                    origin: { x: 0 },
+                    colors: colors
+                });
+                confetti({
+                    particleCount: 3,
+                    angle: 120,
+                    spread: 55,
+                    origin: { x: 1 },
+                    colors: colors
+                });
+                if (Date.now() < end) requestAnimationFrame(frame);
+            }());
+
+            confetti({
+                particleCount: 200,
+                spread: 100,
+                origin: { y: 0.6 },
+                colors: colors
+            });
+        }
+    </script>
+</body>
+</html>
