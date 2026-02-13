@@ -56,7 +56,7 @@
             width: 100%; 
             height: 100%; 
             z-index: 2; /* Kanvas partikel di atas */
-            pointer-events: none; /* Biar tetap bisa interaksi */
+            pointer-events: none; /* Biar tetap bisa klik tombol di bawah */
         }
         .status-msg { margin-top: 15px; font-weight: bold; font-size: 1rem; text-align: center; min-height: 24px; color: var(--text); }
 
@@ -67,6 +67,8 @@
         .bottom-nav { position: fixed; bottom: 0; width: 100%; height: 75px; background: white; display: flex; justify-content: space-around; align-items: center; box-shadow: 0 -5px 20px rgba(0,0,0,0.05); z-index: 1000; }
         .nav-item { display: flex; flex-direction: column; align-items: center; font-size: 0.75rem; color: #bbb; cursor: pointer; transition: 0.3s; }
         .nav-item.active { color: var(--primary); font-weight: 600; }
+        
+        @keyframes shake { 0%, 100% { transform: translateX(0); } 25% { transform: translateX(-10px); } 75% { transform: translateX(10px); } }
     </style>
 </head>
 <body>
@@ -91,10 +93,10 @@
 
             <div id="menu-playlist" class="hidden">
                 <div class="spotify-card">
-                    <iframe style="border-radius:12px" src="https://open.spotify.com/embed/track/6UelLqGlm07H36df6vS66m" width="100%" height="152" frameBorder="0" allow="autoplay; clipboard-write; encrypted-media; fullscreen; picture-in-picture" loading="lazy"></iframe>
+                    <iframe style="border-radius:12px" src="https://open.spotify.com/embed/track/1B62tJb9a6G16s58V0y0G5" width="100%" height="152" frameBorder="0" allow="autoplay; clipboard-write; encrypted-media; fullscreen; picture-in-picture" loading="lazy"></iframe>
                 </div>
                 <div class="spotify-card">
-                    <iframe style="border-radius:12px" src="https://open.spotify.com/embed/track/3tj9f9OonK7mYmUaB59kG2" width="100%" height="152" frameBorder="0" allow="autoplay; clipboard-write; encrypted-media; fullscreen; picture-in-picture" loading="lazy"></iframe>
+                    <iframe style="border-radius:12px" src="https://open.spotify.com/embed/track/6UaR1Yj7GzX0Hh1C5y6z0z" width="100%" height="152" frameBorder="0" allow="autoplay; clipboard-write; encrypted-media; fullscreen; picture-in-picture" loading="lazy"></iframe>
                 </div>
             </div>
 
@@ -215,7 +217,7 @@
             };
 
             p.draw = function() {
-                p.clear(); // Bersihkan canvas tiap frame
+                p.clear(); // Bersihkan canvas tiap frame agar transparan
                 particles.forEach(part => {
                     part.update(isHappy);
                     part.show();
@@ -259,7 +261,7 @@
             show() {
                 this.p.fill(255, 64, 129, 220); // Warna Pink transparan
                 this.p.noStroke();
-                this.p.ellipse(this.pos.x, this.pos.y, 7);
+                this.p.ellipse(this.pos.x, this.pos.y, 7); // Ukuran partikel
             }
         }
 
