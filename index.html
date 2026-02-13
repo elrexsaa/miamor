@@ -16,28 +16,55 @@
         body { background-color: var(--bg); height: 100vh; overflow: hidden; color: var(--text); }
 
         /* --- LOCKSCREEN --- */
-        #lock-screen { display: flex; flex-direction: column; justify-content: center; align-items: center; height: 100vh; text-align: center; }
+        #lock-screen { display: flex; flex-direction: column; justify-content: center; align-items: center; height: 100vh; text-align: center; padding: 20px; }
         .dots-container { display: flex; gap: 15px; margin: 20px 0 40px; }
         .dot { width: 15px; height: 15px; border: 2px solid var(--primary); border-radius: 50%; transition: 0.3s; }
         .dot.active { background: var(--primary); transform: scale(1.2); }
         .keypad { display: grid; grid-template-columns: repeat(3, 75px); gap: 15px; }
-        .key { width: 75px; height: 75px; border-radius: 50%; background: white; display: flex; justify-content: center; align-items: center; cursor: pointer; box-shadow: 0 4px 10px rgba(0,0,0,0.05); transition: 0.2s; }
+        .key { width: 75px; height: 75px; border-radius: 50%; background: white; display: flex; justify-content: center; align-items: center; cursor: pointer; box-shadow: 0 4px 10px rgba(0,0,0,0.05); transition: 0.2s; font-weight: 600; }
         .key:active { background: var(--primary); color: white; transform: scale(0.9); }
 
         /* --- MAIN APP --- */
         #main-app { display: none; height: 100vh; flex-direction: column; background: #fff5f8; }
-        .top-bar { padding: 20px; text-align: center; font-weight: 600; background: white; border-bottom: 1px solid rgba(255, 64, 129, 0.1); }
-        .content { flex: 1; padding: 25px; overflow-y: auto; padding-bottom: 90px; }
+        .top-bar { padding: 20px; text-align: center; font-weight: 600; background: white; border-bottom: 1px solid rgba(255, 64, 129, 0.1); z-index: 100; }
+        .content { flex: 1; padding: 20px; overflow-y: auto; padding-bottom: 100px; }
         .hidden { display: none !important; }
 
-        /* --- GAME AREA --- */
-        #game-container { position: relative; width: 100%; height: 350px; background: #000; border-radius: 20px; overflow: hidden; margin-top: 10px; }
-        #video-feed { position: absolute; width: 100%; height: 100%; object-fit: cover; transform: scaleX(-1); opacity: 0.4; }
-        #p5-canvas-holder { position: absolute; top: 0; left: 0; z-index: 5; width: 100%; height: 100%; }
-        .status-msg { margin-top: 15px; font-weight: bold; font-size: 0.9rem; text-align: center; }
+        /* --- GAME AREA (Fixed Layering) --- */
+        #game-container { 
+            position: relative; 
+            width: 100%; 
+            height: 350px; 
+            background: #000; 
+            border-radius: 20px; 
+            overflow: hidden; 
+            margin-top: 10px;
+            box-shadow: 0 10px 20px rgba(0,0,0,0.1);
+        }
+        #video-feed { 
+            position: absolute; 
+            width: 100%; 
+            height: 100%; 
+            object-fit: cover; 
+            transform: scaleX(-1); 
+            z-index: 1;
+        }
+        #p5-canvas-holder { 
+            position: absolute; 
+            top: 0; 
+            left: 0; 
+            width: 100%; 
+            height: 100%; 
+            z-index: 2; /* Di depan video */
+            pointer-events: none; /* Biar tetap bisa interaksi di bawahnya */
+        }
+        .status-msg { margin-top: 15px; font-weight: bold; font-size: 1rem; text-align: center; min-height: 24px; }
+
+        /* --- PLAYLIST --- */
+        .spotify-card { border-radius: 12px; overflow: hidden; margin-bottom: 15px; box-shadow: 0 4px 10px rgba(0,0,0,0.05); }
 
         /* --- BOTTOM NAV --- */
-        .bottom-nav { position: fixed; bottom: 0; width: 100%; height: 75px; background: white; display: flex; justify-content: space-around; align-items: center; box-shadow: 0 -5px 20px rgba(0,0,0,0.05); }
+        .bottom-nav { position: fixed; bottom: 0; width: 100%; height: 75px; background: white; display: flex; justify-content: space-around; align-items: center; box-shadow: 0 -5px 20px rgba(0,0,0,0.05); z-index: 1000; }
         .nav-item { display: flex; flex-direction: column; align-items: center; font-size: 0.75rem; color: #bbb; cursor: pointer; transition: 0.3s; }
         .nav-item.active { color: var(--primary); font-weight: 600; }
     </style>
@@ -45,7 +72,7 @@
 <body>
 
     <div id="lock-screen">
-        <h2 style="font-weight: 400;">Passcode</h2>
+        <h2 style="font-weight: 400; color: var(--text);">Passcode</h2>
         <div class="dots-container" id="dots">
             <div class="dot"></div><div class="dot"></div><div class="dot"></div><div class="dot"></div>
         </div>
@@ -59,21 +86,25 @@
         <div class="top-bar" id="page-title">💌 Valentine's Message</div>
         <div class="content">
             <div id="menu-pesan">
-                <p id="typing-text" style="line-height: 1.8; color: #444;"></p>
+                <p id="typing-text" style="line-height: 1.8; color: #444; white-space: pre-wrap;"></p>
             </div>
 
             <div id="menu-playlist" class="hidden">
-                <iframe style="border-radius:12px" src="https://open.spotify.com/embed/track/6UelLqGlm07H36df6vS66m" width="100%" height="152" frameBorder="0" allow="autoplay; clipboard-write; encrypted-media; fullscreen; picture-in-picture" loading="lazy"></iframe>
-                <iframe style="border-radius:12px; margin-top:10px" src="https://open.spotify.com/embed/track/3tj9f9OonK7mYmUaB59kG2" width="100%" height="152" frameBorder="0" allow="autoplay; clipboard-write; encrypted-media; fullscreen; picture-in-picture" loading="lazy"></iframe>
+                <div class="spotify-card">
+                    <iframe style="border-radius:12px" src="https://open.spotify.com/embed/track/6Uf9A2z0M993O887X0nI4F?utm_source=generator" width="100%" height="152" frameBorder="0" allow="autoplay; clipboard-write; encrypted-media; fullscreen; picture-in-picture" loading="lazy"></iframe>
+                </div>
+                <div class="spotify-card">
+                    <iframe style="border-radius:12px" src="https://open.spotify.com/embed/track/1L94Zi0fS4A9L9YfUq7YtV?utm_source=generator" width="100%" height="152" frameBorder="0" allow="autoplay; clipboard-write; encrypted-media; fullscreen; picture-in-picture" loading="lazy"></iframe>
+                </div>
             </div>
 
             <div id="menu-game" class="hidden">
-                <h3 style="text-align: center;">Smile Detector ❤️</h3>
+                <h3 style="text-align: center; margin-bottom: 5px;">Smile Detector ❤️</h3>
                 <div id="game-container">
                     <video id="video-feed" autoplay muted playsinline></video>
                     <div id="p5-canvas-holder"></div>
                 </div>
-                <div class="status-msg" id="status-text">Memuat AI... Mohon tunggu...</div>
+                <div class="status-msg" id="status-text">Memuat AI...</div>
             </div>
         </div>
 
@@ -89,7 +120,8 @@
         let currentInput = "";
         let isHappy = false;
         let particles = [];
-        let faceModelsLoaded = false;
+        let modelsLoaded = false;
+        let videoStarted = false;
 
         // --- PIN LOGIC ---
         function pressKey(num) {
@@ -108,127 +140,142 @@
             if (currentInput === CORRECT_PIN) {
                 document.getElementById('lock-screen').style.display = 'none';
                 document.getElementById('main-app').style.display = 'flex';
-                confetti({ particleCount: 150, spread: 70, origin: { y: 0.6 } });
+                confetti({ particleCount: 100, spread: 70, origin: { y: 0.6 } });
                 startTyping();
             } else {
-                const ls = document.getElementById('lock-screen');
-                ls.style.animation = "shake 0.3s";
-                setTimeout(() => { ls.style.animation = ""; clearPin(); }, 300);
+                document.getElementById('lock-screen').style.animation = "shake 0.3s";
+                setTimeout(() => { document.getElementById('lock-screen').style.animation = ""; clearPin(); }, 300);
             }
         }
 
         function startTyping() {
-            const txt = "Halo sayang... ✨\n\nSelamat hari Valentine! Makasih udah jadi alasan aku tersenyum setiap hari. Coba buka menu Game deh, aku mau liat senyum kamu! ❤️";
+            const txt = "Halo sayang... ✨\n\nSelamat hari Valentine! Makasih udah selalu jadi penyemangat aku.\n\nCoba buka menu Game, aku mau liat senyum manis kamu hari ini! ❤️";
             let i = 0;
+            const target = document.getElementById('typing-text');
+            target.innerHTML = "";
             function type() {
                 if (i < txt.length) {
-                    document.getElementById('typing-text').innerHTML += txt.charAt(i);
-                    i++; setTimeout(type, 50);
+                    target.innerHTML += txt.charAt(i);
+                    i++; setTimeout(type, 40);
                 }
             }
             type();
         }
 
-        // --- FACE DETECTION LOGIC ---
-        async function initFaceAPI() {
-            if(faceModelsLoaded) return;
-            const MODEL_URL = 'https://cdn.jsdelivr.net/npm/@vladmandic/face-api@1/model'; // Link model CDN yang stabil
+        // --- FACE API LOGIC ---
+        async function loadModels() {
+            if (modelsLoaded) return;
+            const URL = 'https://cdn.jsdelivr.net/npm/@vladmandic/face-api@1/model';
             try {
-                await Promise.all([
-                    faceapi.nets.tinyFaceDetector.loadFromUri(MODEL_URL),
-                    faceapi.nets.faceExpressionNet.loadFromUri(MODEL_URL)
-                ]);
-                faceModelsLoaded = true;
-                startVideo();
+                await faceapi.nets.tinyFaceDetector.loadFromUri(URL);
+                await faceapi.nets.faceExpressionNet.loadFromUri(URL);
+                modelsLoaded = true;
+                startCamera();
             } catch (e) {
-                document.getElementById('status-text').innerText = "Gagal memuat AI. Cek koneksi internet.";
+                document.getElementById('status-text').innerText = "Gagal memuat AI 😢";
             }
         }
 
-        function startVideo() {
+        function startCamera() {
+            if (videoStarted) return;
             const video = document.getElementById('video-feed');
-            navigator.mediaDevices.getUserMedia({ video: {} })
+            navigator.mediaDevices.getUserMedia({ video: { facingMode: "user" } })
                 .then(stream => {
                     video.srcObject = stream;
-                    document.getElementById('status-text').innerText = "AI Siap! Ayo Senyum 😊";
+                    videoStarted = true;
+                    document.getElementById('status-text').innerText = "Ayo Senyum! 😊";
                     detectSmile();
+                })
+                .catch(() => {
+                    document.getElementById('status-text').innerText = "Kamera tidak diizinkan 🚫";
                 });
         }
 
         async function detectSmile() {
             const video = document.getElementById('video-feed');
             setInterval(async () => {
+                if (!modelsLoaded) return;
                 const detections = await faceapi.detectAllFaces(video, new faceapi.TinyFaceDetectorOptions()).withFaceExpressions();
                 if (detections.length > 0) {
-                    isHappy = detections[0].expressions.happy > 0.5;
-                    document.getElementById('status-text').innerText = isHappy ? "CANTIKNYA! ❤️" : "Mana senyum manisnya? 🤨";
+                    const happyVal = detections[0].expressions.happy;
+                    isHappy = happyVal > 0.5;
+                    document.getElementById('status-text').innerText = isHappy ? "CANTIKNYA! ❤️" : "Senyum dong... 🤨";
                 }
             }, 200);
         }
 
         // --- P5.JS ENGINE ---
-        function setup() {
-            let h = document.getElementById('p5-canvas-holder');
-            let cnv = createCanvas(h.offsetWidth, h.offsetHeight);
-            cnv.parent('p5-canvas-holder');
-            for (let i = 0; i < 100; i++) particles.push(new HeartParticle(i));
-        }
+        let sketch = function(p) {
+            p.setup = function() {
+                let holder = document.getElementById('p5-canvas-holder');
+                let canvas = p.createCanvas(holder.offsetWidth, holder.offsetHeight);
+                canvas.parent('p5-canvas-holder');
+                for (let i = 0; i < 120; i++) particles.push(new HeartParticle(p, i));
+            };
 
-        function draw() {
-            clear();
-            particles.forEach(p => {
-                p.update();
-                p.show();
-            });
-        }
+            p.draw = function() {
+                p.clear();
+                particles.forEach(part => {
+                    part.update(isHappy);
+                    part.show();
+                });
+            };
+
+            p.windowResized = function() {
+                let holder = document.getElementById('p5-canvas-holder');
+                p.resizeCanvas(holder.offsetWidth, holder.offsetHeight);
+            };
+        };
 
         class HeartParticle {
-            constructor(i) {
-                this.pos = createVector(random(width), random(height));
+            constructor(p, i) {
+                this.p = p;
+                this.pos = p.createVector(p.random(p.width), p.random(p.height));
                 this.vel = p5.Vector.random2D();
-                this.acc = createVector();
-                this.t = random(TWO_PI); // Parameter untuk rumus hati
+                this.acc = p.createVector();
+                this.t = p.random(p.TWO_PI);
                 this.id = i;
             }
 
-            update() {
-                if (isHappy) {
-                    // RUMUS MATEMATIKA HATI
-                    let x = 16 * pow(sin(this.t), 3);
-                    let y = -(13 * cos(this.t) - 5 * cos(2 * this.t) - 2 * cos(3 * this.t) - cos(4 * this.t));
-                    let target = createVector(width/2 + x * 8, height/2 + y * 8);
-                    
+            update(forming) {
+                if (forming) {
+                    let x = 16 * Math.pow(Math.sin(this.t), 3);
+                    let y = -(13 * Math.cos(this.t) - 5 * Math.cos(2 * this.t) - 2 * Math.cos(3 * this.t) - Math.cos(4 * this.t));
+                    let target = this.p.createVector(this.p.width/2 + x * 8, this.p.height/2 + y * 8);
                     let force = p5.Vector.sub(target, this.pos);
-                    force.mult(0.05);
+                    force.mult(0.06);
                     this.acc.add(force);
                 } else {
-                    // Jika tidak senyum, partikel pecah/berantakan
-                    this.acc.add(p5.Vector.random2D().mult(0.5));
+                    this.acc.add(p5.Vector.random2D().mult(0.4));
                 }
-                
                 this.vel.add(this.acc);
-                this.vel.limit(isHappy ? 8 : 2);
+                this.vel.limit(forming ? 10 : 3);
                 this.pos.add(this.vel);
                 this.acc.mult(0);
             }
 
             show() {
-                fill(255, 64, 129, 200);
-                noStroke();
-                ellipse(this.pos.x, this.pos.y, 7);
+                this.p.fill(255, 64, 129, 220);
+                this.p.noStroke();
+                this.p.ellipse(this.pos.x, this.pos.y, 7);
             }
         }
 
-        // --- UI NAVIGATION ---
+        new p5(sketch);
+
+        // --- NAVIGATION ---
         function switchMenu(menu, el) {
-            document.querySelectorAll('.nav-item').forEach(item => item.classList.remove('active'));
+            document.querySelectorAll('.nav-item').forEach(n => n.classList.remove('active'));
             el.classList.add('active');
             document.getElementById('menu-pesan').classList.add('hidden');
             document.getElementById('menu-playlist').classList.add('hidden');
             document.getElementById('menu-game').classList.add('hidden');
             document.getElementById('menu-' + menu).classList.remove('hidden');
 
-            if (menu === 'game') initFaceAPI();
+            if (menu === 'game') loadModels();
+            
+            const titles = {pesan: "💌 Valentine's Message", playlist: "🎵 Our Playlist", game: "🎮 Smile Detector"};
+            document.getElementById('page-title').innerText = titles[menu];
         }
     </script>
 </body>
