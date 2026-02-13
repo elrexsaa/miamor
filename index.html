@@ -76,7 +76,7 @@
     </div>
 
     <div id="main-app">
-        <div class="top-bar" id="page-title">💌 Pesan Cinta</div>
+        <div class="top-bar" id="page-title">💌 Notes</div>
         
         <div class="content">
             <div id="menu-pesan">
@@ -88,7 +88,7 @@
                     <div class="bubble ai">Halo sayang... Aku di sini. Ada yang mau kamu ceritain atau tanyain ke aku? ❤️</div>
                 </div>
                 <div class="chat-input-container">
-                    <input type="text" id="chat-input" placeholder="Tulis pesan manis..." onkeypress="handleEnter(event)">
+                    <input type="text" id="chat-input" placeholder="Tulis pesan..." onkeypress="handleEnter(event)">
                     <button id="send-btn" onclick="sendMessage()">❤️</button>
                 </div>
             </div>
@@ -103,14 +103,14 @@
                     <video id="video-feed" autoplay muted playsinline></video>
                     <div id="p5-canvas-holder"></div>
                 </div>
-                <div class="status-msg" id="status-text">Memuat AI Cantik...</div>
+                <div class="status-msg" id="status-text">Memuat AI...</div>
             </div>
         </div>
 
         <nav class="bottom-nav">
             <div class="nav-item active" onclick="switchMenu('pesan', this)"><span>💌</span><span>Pesan</span></div>
-            <div class="nav-item" onclick="switchMenu('chat', this)"><span>💬</span><span>Chat AI</span></div>
-            <div class="nav-item" onclick="switchMenu('playlist', this)"><span>🎵</span><span>Lagu</span></div>
+            <div class="nav-item" onclick="switchMenu('chat', this)"><span>💬</span><span>Tempat Curhat</span></div>
+            <div class="nav-item" onclick="switchMenu('playlist', this)"><span>🎵</span><span>Playlist</span></div>
             <div class="nav-item" onclick="switchMenu('game', this)"><span>🎮</span><span>Game</span></div>
         </nav>
     </div>
@@ -217,7 +217,7 @@
             modelsLoaded = true;
             navigator.mediaDevices.getUserMedia({ video: { facingMode: "user" } }).then(s => {
                 document.getElementById('video-feed').srcObject = s;
-                document.getElementById('status-text').innerText = "AI Siap! Ayo Senyum 😊";
+                document.getElementById('status-text').innerText = "Coba Senyum";
                 detect();
             });
         }
@@ -292,7 +292,7 @@
             el.classList.add('active');
             ['pesan', 'chat', 'playlist', 'game'].forEach(m => document.getElementById('menu-'+m).classList.add('hidden'));
             document.getElementById('menu-'+menu).classList.remove('hidden');
-            const titles = {pesan: "💌 Pesan Cinta", chat: "💬 Chat Sayang", playlist: "🎵 Lagu Kita", game: "🎮 Smile Detector"};
+            const titles = {pesan: "💌 For You", chat: "💬 Tempat Curhat", playlist: "🎵 Playlist", game: "🎮 Game"};
             document.getElementById('page-title').innerText = titles[menu];
             if(menu === 'game') loadModels();
         }
