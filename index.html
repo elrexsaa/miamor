@@ -60,6 +60,40 @@
         }
         .status-msg { margin-top: 15px; font-weight: bold; font-size: 1rem; text-align: center; min-height: 24px; color: var(--text); }
 
+        /* --- POPUP SMILE --- */
+        #smile-popup {
+            position: fixed;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            background: rgba(255, 255, 255, 0.95);
+            padding: 25px;
+            border-radius: 20px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.2);
+            text-align: center;
+            color: var(--primary);
+            font-size: 1.2rem;
+            font-weight: 600;
+            z-index: 1000; /* Di atas segalanya */
+            opacity: 0;
+            visibility: hidden;
+            transition: opacity 0.3s ease, visibility 0.3s ease;
+            max-width: 80%;
+            display: flex;
+            flex-direction: column;
+            gap: 15px;
+            align-items: center;
+        }
+        #smile-popup.show {
+            opacity: 1;
+            visibility: visible;
+        }
+        #smile-popup img {
+            max-width: 120px;
+            border-radius: 10px;
+            box-shadow: 0 5px 15px rgba(0,0,0,0.1);
+        }
+
         /* --- PLAYLIST --- */
         .spotify-card { border-radius: 12px; overflow: hidden; margin-bottom: 15px; box-shadow: 0 4px 10px rgba(0,0,0,0.05); }
 
@@ -93,10 +127,10 @@
 
             <div id="menu-playlist" class="hidden">
                 <div class="spotify-card">
-                    <iframe style="border-radius:12px" src="https://open.spotify.com/embed/track/1B62tJb9a6G16s58V0y0G5" width="100%" height="152" frameBorder="0" allow="autoplay; clipboard-write; encrypted-media; fullscreen; picture-in-picture" loading="lazy"></iframe>
+                    <iframe style="border-radius:12px" src="https://open.spotify.com/...5" width="100%" height="152" frameBorder="0" allow="autoplay; clipboard-write; encrypted-media; fullscreen; picture-in-picture" loading="lazy"></iframe>
                 </div>
                 <div class="spotify-card">
-                    <iframe style="border-radius:12px" src="https://open.spotify.com/embed/track/6UaR1Yj7GzX0Hh1C5y6z0z" width="100%" height="152" frameBorder="0" allow="autoplay; clipboard-write; encrypted-media; fullscreen; picture-in-picture" loading="lazy"></iframe>
+                    <iframe style="border-radius:12px" src="https://open.spotify.com/...6" width="100%" height="152" frameBorder="0" allow="autoplay; clipboard-write; encrypted-media; fullscreen; picture-in-picture" loading="lazy"></iframe>
                 </div>
             </div>
 
@@ -117,6 +151,11 @@
         </nav>
     </div>
 
+    <div id="smile-popup">
+        <span id="popup-text"></span>
+        <img id="popup-gif" src="" alt="Cute GIF" style="display: none;">
+    </div>
+
     <script>
         const CORRECT_PIN = "2009";
         let currentInput = "";
@@ -124,6 +163,15 @@
         let particles = [];
         let modelsLoaded = false;
         let videoStarted = false;
+        let smileDetectedTimeout;
+
+        // Daftar pesan dan GIF (bisa ditambah/diganti)
+        const smileMessages = [
+            { text: "Senyummu manis banget! 🥰", gif: "https://i.giphy.com/media/v1.Y2lkPTc5MGI3NjExOHp1eDF4azZxdnczNWg4Z3R5Z3FzN2ZvcjFja2RjMXR6a3R3eDhkZSZlcD12MV9pbnRlcm5hbF9naWZfYnlfaWQmY3Q9Zw/2vn7dEwJqD1N1RkP8k/giphy.gif" }, // Cute cat
+            { text: "Bikin meleleh! 🔥", gif: "https://i.giphy.com/media/v1.Y2lkPTc5MGI3NjExd2R4d3RzZ3M0aTJkMGE5MWZqNWxkb203OGVpOG5tZW8waXJ1d210biZlcD12MV9pbnRlcm5hbF9naWZfYnlfaWQmY3Q9Zw/lqSDxIeK5J9xHh9Y7y/giphy.gif" }, // Puppy love
+            { text: "Aduh, gemesnya! 💖", gif: "https://i.giphy.com/media/v1.Y2lkPTc5MGI3NjExM3h5cml6bW9kdHkwdXQ4dzU3anU1dHJvcG4yaDloN2p5enV2eHdsOCZlcD12MV9pbnRlcm5hbF9naWZfYnlfaWQmY3Q9Zw/ICOgseOchH7f1R3X9z/giphy.gif" }, // Bear love
+            { text: "My heart just skipped a beat! ❤️", gif: "https://i.giphy.com/media/v1.Y2lkPTc5MGI3NjExOXV3N3h4cmZ2eXp5eG9yMW0zM3NqZzJjMGFhZTV2NjB0OHJ5dW5jYiZlcD12MV9pbnRlcm5hbF9naWZfYnlfaWQmY3Q9Zw/2vmiS9799yqNl2g2l1/giphy.gif" }, // Rabbit hug
+        ];
 
         // --- PIN LOGIC ---
         function pressKey(num) {
@@ -134,8 +182,7 @@
             }
         }
         function updateDots() {
-            const dots = document.querySelectorAll('.dot');
-            dots.forEach((dot, i) => dot.classList.toggle('active', i < currentInput.length));
+            document.querySelectorAll('.dot').forEach((dot, i) => dot.classList.toggle('active', i < currentInput.length));
         }
         function clearPin() { currentInput = ""; updateDots(); }
         function checkPin() {
@@ -164,10 +211,9 @@
             type();
         }
 
-        // --- FACE API LOGIC (Fixed for mobile) ---
+        // --- FACE API LOGIC ---
         async function loadModels() {
             if (modelsLoaded) return;
-            // Gunakan CDN model yang lebih stabil
             const URL = 'https://cdn.jsdelivr.net/npm/@vladmandic/face-api@1/model';
             try {
                 await faceapi.nets.tinyFaceDetector.loadFromUri(URL);
@@ -194,6 +240,7 @@
                 });
         }
 
+        let lastSmileState = false; // Untuk deteksi perubahan senyum
         async function detectSmile() {
             const video = document.getElementById('video-feed');
             setInterval(async () => {
@@ -201,13 +248,47 @@
                 const detections = await faceapi.detectAllFaces(video, new faceapi.TinyFaceDetectorOptions()).withFaceExpressions();
                 if (detections.length > 0) {
                     const happyVal = detections[0].expressions.happy;
-                    isHappy = happyVal > 0.5; // Threshold senyum
+                    isHappy = happyVal > 0.5;
+
+                    // Logika untuk menampilkan popup saat isHappy berubah dari false ke true
+                    if (isHappy && !lastSmileState) {
+                        showSmilePopup();
+                    }
+                    lastSmileState = isHappy; // Update status senyum terakhir
+
                     document.getElementById('status-text').innerText = isHappy ? "CANTIKNYA! ❤️" : "Senyum dong... 🤨";
+                } else {
+                    isHappy = false; // Jika tidak ada wajah terdeteksi, anggap tidak senyum
+                    lastSmileState = false;
+                    document.getElementById('status-text').innerText = "Wajah tidak terdeteksi...";
                 }
             }, 200);
         }
 
-        // --- P5.JS ENGINE (Fixed for layering) ---
+        // --- POPUP LOGIC ---
+        function showSmilePopup() {
+            clearTimeout(smileDetectedTimeout); // Clear previous timeout if exists
+            const popup = document.getElementById('smile-popup');
+            const popupText = document.getElementById('popup-text');
+            const popupGif = document.getElementById('popup-gif');
+
+            const randomMessage = smileMessages[Math.floor(Math.random() * smileMessages.length)];
+            
+            popupText.innerText = randomMessage.text;
+            popupGif.src = randomMessage.gif;
+            popupGif.style.display = 'block'; // Tampilkan GIF
+
+            popup.classList.add('show');
+
+            // Sembunyikan popup setelah 3 detik
+            smileDetectedTimeout = setTimeout(() => {
+                popup.classList.remove('show');
+                popupGif.style.display = 'none'; // Sembunyikan GIF lagi
+            }, 3000); // Popup tampil selama 3 detik
+        }
+
+
+        // --- P5.JS ENGINE ---
         let sketch = function(p) {
             p.setup = function() {
                 let holder = document.getElementById('p5-canvas-holder');
@@ -217,7 +298,7 @@
             };
 
             p.draw = function() {
-                p.clear(); // Bersihkan canvas tiap frame agar transparan
+                p.clear();
                 particles.forEach(part => {
                     part.update(isHappy);
                     part.show();
@@ -236,12 +317,11 @@
                 this.pos = p.createVector(p.random(p.width), p.random(p.height));
                 this.vel = p5.Vector.random2D();
                 this.acc = p.createVector();
-                this.t = p.random(p.TWO_PI); // Parameter untuk rumus hati
+                this.t = p.random(p.TWO_PI);
             }
 
             update(forming) {
                 if (forming) {
-                    // Rumus Matematika Hati
                     let x = 16 * Math.pow(Math.sin(this.t), 3);
                     let y = -(13 * Math.cos(this.t) - 5 * Math.cos(2 * this.t) - 2 * Math.cos(3 * this.t) - Math.cos(4 * this.t));
                     let target = this.p.createVector(this.p.width/2 + x * 9, this.p.height/2 + y * 9);
@@ -259,9 +339,9 @@
             }
 
             show() {
-                this.p.fill(255, 64, 129, 220); // Warna Pink transparan
+                this.p.fill(255, 64, 129, 220);
                 this.p.noStroke();
-                this.p.ellipse(this.pos.x, this.pos.y, 7); // Ukuran partikel
+                this.p.ellipse(this.pos.x, this.pos.y, 7);
             }
         }
 
